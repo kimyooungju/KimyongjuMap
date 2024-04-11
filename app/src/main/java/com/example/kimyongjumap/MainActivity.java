@@ -1,5 +1,5 @@
 package com.example.kimyongjumap;
-
+import com.example.kimyongjumap.NaverSearchTask;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 
+import android.widget.SearchView;
 import com.naver.maps.geometry.Coord;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.LocationTrackingMode;
@@ -35,13 +36,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String TAG = "MainActivity";
     private static OverlayImage overlayImage;
     private static final int PERMISSION_REQUEST_CODE = 100;
-
     private static final String[] PERMISSIONS = {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
     };
     private FusedLocationSource mLocationSource;
     private NaverMap mNaverMap;
+    private SearchView sv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mLocationSource =
                 new FusedLocationSource(this, PERMISSION_REQUEST_CODE);
         setContentView(R.layout.activity_main);
+
+        sv = (SearchView) findViewById(R.id.searchView);
+
+        sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // MainActivity 인스턴스를 NaverSearchTask 생성자에 전달하지 않고,
+                // MainActivity에서 구현한 SearchCallback 인터페이스를 사용하여 콜백을 처리합니다.
+                NaverSearchTask naverSearchTask = new NaverSearchTask(MainActivity.this);
+                naverSearchTask.execute(query);
+                // 검색 버튼이 클릭되었을 때 호출됨
+                // 여기에 네이버 검색 API를 사용하여 검색 결과를 가져오고 표시하는 로직을 추가합니다.
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // 검색어가 변경될 때마다 호출됨
+                // 실시간 검색 기능을 구현할 수 있습니다.
+                return false;
+            }
+        });
+
+
 
         FragmentManager fm = getSupportFragmentManager();
         MapFragment mapFragment = (MapFragment) fm.findFragmentById(R.id.map_fragment);
@@ -58,6 +83,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         mapFragment.getMapAsync(this);
+    }
+
+    public void onSearchResult(String result) {
+        if (result != null) {
+            Toast.makeText(MainActivity.this, "검색 결과: " + result, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(MainActivity.this, "검색 결과를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
