@@ -2,9 +2,12 @@ package com.example.kimyongjumap;
 import com.example.kimyongjumap.NaverSearchTask;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
+import android.location.Address;
+import android.location.Geocoder;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -13,6 +16,7 @@ import androidx.fragment.app.FragmentManager;
 import android.widget.SearchView;
 import com.naver.maps.geometry.Coord;
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
@@ -25,12 +29,13 @@ import com.naver.maps.map.util.FusedLocationSource;
 import android.Manifest;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, NaverSearchTask.SearchCallback {
     PathOverlay path = new PathOverlay();
     List<LatLng> coords = new ArrayList<>();
     private static final String TAG = "MainActivity";
@@ -42,7 +47,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     };
     private FusedLocationSource mLocationSource;
     private NaverMap mNaverMap;
-    private SearchView sv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,29 +55,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new FusedLocationSource(this, PERMISSION_REQUEST_CODE);
         setContentView(R.layout.activity_main);
 
-        sv = (SearchView) findViewById(R.id.searchView);
-
+        Log.d(TAG, "onCreate");
+        SearchView sv = (SearchView) findViewById(R.id.searchView);
+        final NaverSearchTask naverSearchTask = new NaverSearchTask(this);
         sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 // MainActivity 인스턴스를 NaverSearchTask 생성자에 전달하지 않고,
                 // MainActivity에서 구현한 SearchCallback 인터페이스를 사용하여 콜백을 처리합니다.
-                NaverSearchTask naverSearchTask = new NaverSearchTask(MainActivity.this);
+                if (naverSearchTask.getStatus() == AsyncTask.Status.RUNNING) {
+                    // 실행 중인 경우 취소하고 새로운 객체 생성하여 실행
+                    naverSearchTask.cancel(true);
+                }
+                NaverSearchTask naverSearchTask = new NaverSearchTask(MainActivity.this); // 새로운 객체 생성
                 naverSearchTask.execute(query);
+                String address = query;
+                try{
+                    Geocoder geocoder = new Geocoder(MainActivity.this);
+                    List<Address> addresses = geocoder.getFromLocationName(address, 1);
+                    if (!addresses.isEmpty()) {
+                        Address addressResult = addresses.get(0);
+                        LatLng latLng = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
+                        mNaverMap.moveCamera(CameraUpdate.scrollTo(latLng)); // 해당 좌표로 지도 이동
+                        Marker marker = new Marker();
+                        marker.setPosition(latLng); // 마커 위치 설정
+                        marker.setMap(mNaverMap); // 마커 지도에 추가
+                    } else {
+                        Toast.makeText(MainActivity.this, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException e) { //Unhandled exception: java.io.IOException 에러 해결을 위해 작성
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "주소 변환 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                }
                 // 검색 버튼이 클릭되었을 때 호출됨
                 // 여기에 네이버 검색 API를 사용하여 검색 결과를 가져오고 표시하는 로직을 추가합니다.
                 return true;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
+                //naverSearchTask.cancel(true); // 기존에 실행 중인 검색 작업을 취소
+               // if (!newText.isEmpty()) { // 검색어가 비어있지 않은 경우에만 검색 수행
+                //    NaverSearchTask naverSearchTask = new NaverSearchTask(MainActivity.this); // 새로운 검색 작업 생성
+               //     naverSearchTask.execute(newText); // 새로운 검색 실행
+               // }
                 // 검색어가 변경될 때마다 호출됨
                 // 실시간 검색 기능을 구현할 수 있습니다.
                 return false;
             }
         });
-
-
 
         FragmentManager fm = getSupportFragmentManager();
         MapFragment mapFragment = (MapFragment) fm.findFragmentById(R.id.map_fragment);
@@ -122,10 +151,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         marker.setMap(naverMap);
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
 
-        naverMap.addOnLocationChangeListener(location ->
-                Toast.makeText(this,
-                        location.getLatitude() + ", " + location.getLongitude(),
-                        Toast.LENGTH_SHORT).show());
+        //naverMap.addOnLocationChangeListener(location ->
+        //        Toast.makeText(this,
+        //                location.getLatitude() + ", " + location.getLongitude(),
+        //                Toast.LENGTH_SHORT).show());
 
         path.setCoords(Arrays.asList(
                 new LatLng(37.4487, 127.1680583),

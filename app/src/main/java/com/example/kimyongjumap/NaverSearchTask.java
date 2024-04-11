@@ -12,8 +12,8 @@ import java.net.URLEncoder;
 
 public class NaverSearchTask extends AsyncTask<String, Void, String> {
 
-    private static final String NAVER_CLIENT_ID = "l0dlx2ru50";
-    private static final String NAVER_CLIENT_SECRET = "cAwEIt8O2kuQ3F9Z3133f2qkxAg29wwddwL9uOBO";
+    private static final String NAVER_CLIENT_ID = "t2onmjtW9uRxLYOHFLlE";
+    private static final String NAVER_CLIENT_SECRET = "cMqZPul6Mj";
 
     private SearchCallback callback;
 
