@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">KimyongjuMap</string>
+    <string name="search_hint">검색어를 입력하세요.</string>
 </resources>

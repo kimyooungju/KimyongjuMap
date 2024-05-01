@@ -7,31 +7,50 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <fragment
         android:id="@+id/map_fragment"
         android:name="com.naver.maps.map.MapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="-101dp" />
+        tools:layout_editor_absoluteY="75dp" />
 
     <android.widget.SearchView
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#ffffff"
-        android:queryHint="Search"
-        app:defaultQueryHint="또 찾으실 식당이 있으신가요?"
+        android:background="@color/white"
+        android:clickable="true"
+        android:focusable="false"
+        android:queryHint=""
+        android:src="@drawable/baseline_search_black_48dp"
         app:iconifiedByDefault="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/map_fragment"
-        app:layout_constraintVertical_bias="0.05"
-        app:queryBackground="@android:color/white"
-        app:queryHint="찾으실 식당을 입력해주세요." />
+        app:layout_constraintVertical_bias="0.0"
+        app:queryBackground="@android:color/white">
+
+    </android.widget.SearchView>
+
+    <AutoCompleteTextView
+        android:id="@+id/searchAutoComplete"
+        android:layout_width="300dp"
+        android:layout_height="48dp"
+        android:background="@android:color/transparent"
+        android:completionThreshold="1"
+        android:hint="주소를 입력해주세요"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.612"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
+
+    </AutoCompleteTextView>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-

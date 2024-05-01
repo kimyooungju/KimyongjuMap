@@ -2,6 +2,8 @@ package com.example.kimyongjumap;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.naver.maps.geometry.LatLng;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +11,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class NaverSearchTask extends AsyncTask<String, Void, String> {
 
@@ -37,6 +46,7 @@ public class NaverSearchTask extends AsyncTask<String, Void, String> {
             connection.setRequestMethod("GET");
             connection.setRequestProperty("X-Naver-Client-Id", NAVER_CLIENT_ID);
             connection.setRequestProperty("X-Naver-Client-Secret", NAVER_CLIENT_SECRET);
+            connection.setConnectTimeout(10000);
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -58,7 +68,29 @@ public class NaverSearchTask extends AsyncTask<String, Void, String> {
             return null;
         }
     }
+    // 아래 새로 추가
+    public static List<MarkerInfo> parseSearchResult(String result) {
+        List<MarkerInfo> markerInfoList = new ArrayList<>();
 
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            JSONArray items = jsonObject.getJSONArray("items");
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.getJSONObject(i);
+                String title = item.getString("title");
+                String link = item.getString("link");
+                String address = item.getString("address");
+                String category = item.getString("category");
+                double latitude = item.getDouble("mapy");
+                double longitude = item.getDouble("mapx");
+                markerInfoList.add(new MarkerInfo(title, link, address, category, new LatLng(latitude, longitude)));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return markerInfoList;
+    }
     @Override
     protected void onPostExecute(String result) {
         if (callback != null) {
