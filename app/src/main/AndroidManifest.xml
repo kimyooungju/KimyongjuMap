@@ -31,6 +31,9 @@
             </intent-filter>
 
         </activity>
+        <activity android:name=".urlPage">
+
+        </activity>
         <meta-data
             android:name="com.naver.maps.map.CLIENT_ID"
             android:value="l0dlx2ru50" />

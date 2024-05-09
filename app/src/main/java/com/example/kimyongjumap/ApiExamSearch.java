@@ -16,7 +16,7 @@ public class ApiExamSearch {
         String clientSecret = "cMqZPul6Mj"; //애플리케이션 클라이언트 시크릿
 
 
-        String text = "신구대학교";
+        String text = "명동 칼국수";
         try {
             text = URLEncoder.encode("그린팩토리", "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -24,7 +24,7 @@ public class ApiExamSearch {
         }
 
 
-        String apiURL = "https://openapi.naver.com/v1/search/blog?query=" + text;    // JSON 결과
+        String apiURL = "https://openapi.naver.com/v1/search/local.json?query=" + text;    // JSON 결과
         //String apiURL = "https://openapi.naver.com/v1/search/blog.xml?query="+ text; // XML 결과
 
 

@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
-            android:id="@+id/button"
+            android:id="@+id/webBack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="이전"
@@ -18,14 +18,14 @@
             tools:layout_editor_absoluteY="12dp" />
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/layoutBack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="돌아가기" />
 
         <Button
-            android:id="@+id/button3"
+            android:id="@+id/webGo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -34,6 +34,7 @@
     </LinearLayout>
 
     <WebView
+        android:id="@+id/markerUrl"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

@@ -37,6 +37,7 @@
     </android.widget.SearchView>
 
     <AutoCompleteTextView
+        android:dropDownWidth="match_parent"
         android:id="@+id/searchAutoComplete"
         android:layout_width="300dp"
         android:layout_height="48dp"
