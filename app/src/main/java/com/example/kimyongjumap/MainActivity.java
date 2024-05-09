@@ -20,6 +20,7 @@ import androidx.fragment.app.FragmentManager;
 
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -64,7 +65,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SearchView mSearchView;
     private NaverSearchTask mNaverSearchTask;
     private AutoCompleteTextView autoCompleteTextView;
-    private List<String> autoCompleteList = new ArrayList<>(); // 자동 완성 결과 리스트
+    private List<String> autoCompleteList = new ArrayList<>();
+    // 자동 완성 결과 리스트
     private boolean isInfoWindowOpen = false;
 
     @Override
@@ -77,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.searchAutoComplete);
         mSearchView = (SearchView) findViewById(R.id.searchView);
-        //mNaverSearchTask = new NaverSearchTask(this);
 
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -175,18 +176,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 JSONArray items = jsonObject.getJSONArray("items");
                 for (int i = 0; i < items.length(); i++) {
                     JSONObject item = items.getJSONObject(i);
-                    String addr = item.getString("address");
-                    if (addr.contains(mSearchView.getQuery().toString())){
-                        if (!autoCompleteList.contains(addr)) { // 중복되지 않은 주소만 추가
-                            autoCompleteList.add(addr);
+                    String title = item.getString("title").replace("<b>", " ").replace("</b>", " ");
+                    String address = item.getString("address");
+                    String combined = title + " 주소: " + address; // 식당 이름과 주소를 합
+                    if (combined.contains(mSearchView.getQuery().toString())){
+                        if (!autoCompleteList.contains(combined)) { // 중복되지 않은 주소만 추가
+                            autoCompleteList.add(combined);
                         }
                     }
                 }
                     //List<MarkerInfo> markerInfoList = NaverSearchTask.parseSearchResult(result);
                     //showMarkers(markerInfoList);
-                // 검색 결과를 사용하여 autoCompleteAdapter를 설정
                 ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<>(
-                        MainActivity.this, android.R.layout.simple_dropdown_item_1line, autoCompleteList);
+                        MainActivity.this, R.layout.line2_dropdown, autoCompleteList);
                 autoCompleteTextView.setAdapter(autoCompleteAdapter);
             } catch (Exception e) {
                 Log.e(TAG, "검색 결과 파싱 오류", e);

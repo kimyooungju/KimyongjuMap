@@ -39,7 +39,7 @@ public class NaverSearchTask extends AsyncTask<String, Void, String> {
         String query = strings[0];
         try {
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
-            String apiUrl = "https://openapi.naver.com/v1/search/local.json?query=" + encodedQuery + "&display=100"; //한번의 검색으로 100개를 가져옴
+            String apiUrl = "https://openapi.naver.com/v1/search/local.json?query=" + encodedQuery + "&display=500"; //한번의 검색으로 100개를 가져옴
 
             URL url = new URL(apiUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
