@@ -3,6 +3,7 @@ package com.example.kimyongjumap;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -24,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.SearchView;
 import com.naver.maps.geometry.Coord;
 import com.naver.maps.geometry.LatLng;
@@ -32,6 +34,7 @@ import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.CircleOverlay;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.Overlay;
@@ -68,6 +71,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<String> autoCompleteList = new ArrayList<>();
     // 자동 완성 결과 리스트
     private boolean isInfoWindowOpen = false;
+    private List<Marker> markerList = new ArrayList<>();
+    private Marker currentLocationMarker; // 현재 위치 마커를 클래스 필드로 선언
+    private View.OnClickListener cl;
+    private InfoWindow infoWindow = new InfoWindow();
+    private CircleOverlay mCircleOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +87,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.searchAutoComplete);
         mSearchView = (SearchView) findViewById(R.id.searchView);
+
+        ImageButton myGPSLocationResult = (ImageButton) findViewById(R.id.mygpslocation);
+        infoWindow.setAdapter( new InfoWindow.DefaultTextAdapter(this) {
+            @NonNull
+            @Override
+            public CharSequence getText(@NonNull InfoWindow infoWindow) {
+                return "현재 위치";
+            }
+        });
+        cl = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int id = v.getId();
+                if ( id == R.id.mygpslocation){
+                    mylocationMap();
+                }
+            }
+        };
+        myGPSLocationResult.setOnClickListener(cl);
 
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -134,6 +161,44 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             fm.beginTransaction().add(R.id.map_fragment, mapFragment).commit(); //트렌직션을 실행, 해당되는 레이아웃을 추가하고 커밋
         }
         mapFragment.getMapAsync(this);
+    }
+
+    private void mylocationMap(){
+        // GPS를 사용하는 사용자의 기기가 위치변동이 있을때마다 수행함
+        NaverMap.OnLocationChangeListener locationChangeListener = location -> {
+            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            mNaverMap.moveCamera(CameraUpdate.scrollTo(currentLocation));
+            infoWindow.close(); // 기존 마커에 연결된 정보창 닫기
+            if (currentLocationMarker != null) {
+                currentLocationMarker.setMap(null); // 기존 마커 제거
+            }
+
+            if (location != null) { // 내위치를 중심으로 반경 1km원 생성
+                if(mCircleOverlay != null){
+                    mCircleOverlay.setMap(null);
+                }
+                mCircleOverlay = new CircleOverlay();
+                mCircleOverlay.setCenter(currentLocation);
+                mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
+                mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
+                mCircleOverlay.setMap(mNaverMap);
+
+                NaverMarkerCreateTask searchTask = new NaverMarkerCreateTask(this, currentLocation); // 현재 위치를 전달
+                searchTask.execute();
+            }
+            // 현재 위치에 마커 추가
+            currentLocationMarker = new Marker();
+            currentLocationMarker.setPosition(currentLocation);
+            currentLocationMarker.setAlpha(0.7f);
+            currentLocationMarker.setMap(mNaverMap);
+
+            //현위치를 나타내는 마커구분을 위한 정보창 생성
+            infoWindow.open(currentLocationMarker);
+        };
+        // 위치 추적 리스너 추가
+        mNaverMap.addOnLocationChangeListener(locationChangeListener);
+        // 위치를 받아온 후 위치 추적 리스너를 제거합니다.
+        mNaverMap.removeOnLocationChangeListener(locationChangeListener);
     }
 
     private void handleSearchQuery(String query) {
@@ -200,11 +265,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void showMarkers(List<MarkerInfo> markerInfoList) {
+    public void showMarkers(List<MarkerInfo> markerInfoList) {
+        for (Marker marker : markerList) {
+            marker.setMap(null);
+        }
+        // 이전에 생성된 마커 리스트 비우기
+        markerList.clear();
         for (MarkerInfo markerInfo : markerInfoList) {
             Marker marker = new Marker();
             marker.setPosition(markerInfo.getLatLng());
             marker.setMap(mNaverMap);
+            markerList.add(marker); // 생성된 마커를 리스트에 추가
 
             InfoWindow infoWindow = new InfoWindow();
             infoWindow.setAdapter(new InfoWindow.ViewAdapter() {
@@ -232,10 +303,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         }
                     });
-
                     return view;
                 }
-
             });
             // 마커에 클릭 이벤트 설정
             marker.setOnClickListener((overlay) -> {
@@ -268,18 +337,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d(TAG, "onMapReady");
         // NaverMap 객체에 위치 소스 지정
         mNaverMap = naverMap;
-        mNaverMap.setLocationSource(mLocationSource);
+        naverMap.setLocationSource(mLocationSource); //naverMap 객체에 위치 리소스를 지정
         // 권한 확인, onRequestPermissionsResult 콜백 메서드 호출
         ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
-        // 지도에 마커 표시
-        Marker marker = new Marker();
-        marker.setPosition(new LatLng(37.5670135, 126.9783740));
-        marker.setMap(naverMap);
-        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
-        //naverMap.addOnLocationChangeListener(location ->
-        //        Toast.makeText(this,
-        //                location.getLatitude() + ", " + location.getLongitude(),
-        //                Toast.LENGTH_SHORT).show());
+        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow); //지도에서 위치 추적모드 설정
+        NaverMap.OnLocationChangeListener locationChangeListener = location -> {
+            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            mNaverMap.moveCamera(CameraUpdate.scrollTo(currentLocation));
+            if (location != null) { // 내위치를 중심으로 반경 1km원 생성
+                if(mCircleOverlay != null){
+                    mCircleOverlay.setMap(null);
+                }
+                mCircleOverlay = new CircleOverlay();
+                mCircleOverlay.setCenter(currentLocation);
+                mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
+                mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
+                mCircleOverlay.setMap(mNaverMap);
+
+            }
+
+            // 현재 위치에 마커 추가
+            currentLocationMarker = new Marker();
+            currentLocationMarker.setPosition(currentLocation);
+            currentLocationMarker.setAlpha(0.7f);
+            currentLocationMarker.setMap(mNaverMap);
+
+            //현위치를 나타내는 마커구분을 위한 정보창 생성
+            infoWindow.open(currentLocationMarker);
+        };
+        // 위치 추적 리스너 추가
+        naverMap.addOnLocationChangeListener(locationChangeListener);
+        // 위치를 받아온 후 위치 추적 리스너를 제거합니다.
+        naverMap.removeOnLocationChangeListener(locationChangeListener);
+        naverMap.addOnLocationChangeListener(location ->
+                Toast.makeText(this,
+                        location.getLatitude() + ", " + location.getLongitude(),
+                        Toast.LENGTH_SHORT).show());
+
 
         path.setCoords(Arrays.asList(
                 new LatLng(37.4487, 127.1680583),

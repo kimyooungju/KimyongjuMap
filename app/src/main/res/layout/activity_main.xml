@@ -13,8 +13,8 @@
         android:name="com.naver.maps.map.MapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="75dp" />
+        tools:layout_editor_absoluteX="192dp"
+        tools:layout_editor_absoluteY="16dp" />
 
     <android.widget.SearchView
         android:id="@+id/searchView"
@@ -52,6 +52,19 @@
         app:layout_constraintVertical_bias="0.0">
 
     </AutoCompleteTextView>
+
+    <ImageButton
+        android:id="@+id/mygpslocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.955"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.091"
+        app:srcCompat="@android:drawable/stat_notify_sync"
+        app:tint="@color/quantum_cyan" />/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

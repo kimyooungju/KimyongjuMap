@@ -24,7 +24,7 @@ public class ApiExamSearch {
         }
 
 
-        String apiURL = "https://openapi.naver.com/v1/search/local.json?query=" + text;    // JSON 결과
+        String apiURL = "https://openapi.naver.com/v1/search/local.json?query="+text+"&display=1000";    // JSON 결과
         //String apiURL = "https://openapi.naver.com/v1/search/blog.xml?query="+ text; // XML 결과
 
 

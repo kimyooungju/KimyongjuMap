@@ -71,7 +71,6 @@ public class NaverSearchTask extends AsyncTask<String, Void, String> {
     // 아래 새로 추가
     public static List<MarkerInfo> parseSearchResult(String result) {
         List<MarkerInfo> markerInfoList = new ArrayList<>();
-
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray items = jsonObject.getJSONArray("items");

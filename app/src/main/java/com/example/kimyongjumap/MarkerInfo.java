@@ -41,7 +41,6 @@ public class MarkerInfo {
         this.category = category;
     }
 
-
     public String getAddress() {
         return address;
     }
