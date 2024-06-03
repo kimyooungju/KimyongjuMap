@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, NaverSearchTask.SearchCallback {
     PathOverlay path = new PathOverlay();
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Marker currentLocationMarker; // 현재 위치 마커를 클래스 필드로 선언
     private View.OnClickListener cl;
     private InfoWindow infoWindow = new InfoWindow();
-    private CircleOverlay mCircleOverlay;
+    public CircleOverlay mCircleOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,9 +183,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
                 mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
                 mCircleOverlay.setMap(mNaverMap);
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> addresses;
+                try {
+                    addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                    if (addresses != null && !addresses.isEmpty()) {
+                        String address = addresses.get(0).getAddressLine(0);
+                        String roadAddress = addresses.get(0).getThoroughfare();
+                        Log.d(TAG, "현재 위치의 주소: " + address);
+                        String firstDelAdd = address.replaceFirst("^.*?\\s+", "");
+                        String[] addressParts = firstDelAdd.split("\\s+", 4);
+                        String modifiedAddress = addressParts[0] + " " + addressParts[1] + " " + addressParts[2]; // 첫 번째, 두 번째, 세 번째, 네 번째 부분 선택
 
-                NaverMarkerCreateTask searchTask = new NaverMarkerCreateTask(this, currentLocation); // 현재 위치를 전달
-                searchTask.execute();
+
+                        Log.d(TAG,"내위치 주소: "+modifiedAddress);
+
+                        // API 호출을 위한 NaverMarkerCreateTask 실행
+                        new NaverMarkerCreateTask(this, currentLocation).execute();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             // 현재 위치에 마커 추가
             currentLocationMarker = new Marker();
@@ -197,11 +216,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
         // 위치 추적 리스너 추가
         mNaverMap.addOnLocationChangeListener(locationChangeListener);
-        // 위치를 받아온 후 위치 추적 리스너를 제거합니다.
+        // 위치를 받아온 후 위치 추적 리스너를 제거합니다. //초기화
         mNaverMap.removeOnLocationChangeListener(locationChangeListener);
     }
 
-    private void handleSearchQuery(String query) {
+    private void handleSearchQuery(String query) {// 자신의 위치로 이동후 마커생성
         // MainActivity 인스턴스를 NaverSearchTask 생성자에 전달하지 않고,
         // MainActivity에서 구현한 SearchCallback 인터페이스를 사용하여 콜백을 처리합니다.
 
@@ -232,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void onSearchResult(String result) {
+    public void onSearchResult(String result) { //NaverSearchTask에서 응답받는쪽
         if (result != null) {
             try {
                 // 검색 결과를 파싱하고 AutoCompleteTextView에 표시
@@ -266,57 +285,60 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void showMarkers(List<MarkerInfo> markerInfoList) {
-        for (Marker marker : markerList) {
-            marker.setMap(null);
-        }
-        // 이전에 생성된 마커 리스트 비우기
-        markerList.clear();
-        for (MarkerInfo markerInfo : markerInfoList) {
-            Marker marker = new Marker();
-            marker.setPosition(markerInfo.getLatLng());
-            marker.setMap(mNaverMap);
-            markerList.add(marker); // 생성된 마커를 리스트에 추가
+        try {
+            if( markerList != null) {
+                for (Marker marker : markerList) {
+                    marker.setMap(null);
+                }
+                markerList.clear();
+            }
+            for (MarkerInfo markerInfo : markerInfoList) {
+                Marker marker = new Marker();
+                marker.setPosition(markerInfo.getLatLng());
+                marker.setMap(mNaverMap);
+                markerList.add(marker); // 생성된 마커를 전역 리스트에 추가
 
-            InfoWindow infoWindow = new InfoWindow();
-            infoWindow.setAdapter(new InfoWindow.ViewAdapter() {
-                @NonNull
-                @Override
-                public View getView(@NonNull InfoWindow infoWindow) {
-                    View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.marker_infomation, null);
-                    TextView fTitle = (TextView) view.findViewById(R.id.getFoodTitle);
-                    TextView fAddress = (TextView) view.findViewById(R.id.getFoodAddress);
-                    TextView fCategory = (TextView) view.findViewById(R.id.getFoodCategory);
-                    TextView fLink = (TextView) view.findViewById(R.id.getFoodLink);
-                    Button  fLinkButton = (Button) view.findViewById(R.id.linkSelect);
-                    fTitle.setText(markerInfo.getTitle());
-                    fAddress.setText(markerInfo.getAddress());
-                    fCategory.setText(markerInfo.getCategory());
-                    fLink.setText(markerInfo.getLink());
-                    fLinkButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            int id = v.getId();
-                            if(id == R.id.linkSelect){
-                                Intent i = new Intent(getApplicationContext(), urlPage.class);
-                                i.putExtra("urlText",fLink.getText().toString());
-                                startActivity(i);
+                InfoWindow infoWindow = new InfoWindow();
+                infoWindow.setAdapter(new InfoWindow.ViewAdapter() {
+                    @NonNull
+                    @Override
+                    public View getView(@NonNull InfoWindow infoWindow) {
+                        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.marker_infomation, null);
+                        TextView fTitle = (TextView) view.findViewById(R.id.getFoodTitle);
+                        TextView fAddress = (TextView) view.findViewById(R.id.getFoodAddress);
+                        TextView fCategory = (TextView) view.findViewById(R.id.getFoodCategory);
+                        fTitle.setText(markerInfo.getTitle().replace("<b>", " ").replace("</b>", " "));
+                        fAddress.setText(markerInfo.getAddress());
+                        fCategory.setText(markerInfo.getCategory());
+                        /*fLink.setText(markerInfo.getLink());
+                        fLinkButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                int id = v.getId();
+                                if (id == R.id.linkSelect) {
+                                    Intent i = new Intent(getApplicationContext(), urlPage.class);
+                                    i.putExtra("urlText", fLink.getText().toString());
+                                    startActivity(i);
+                                }
                             }
-                        }
-                    });
-                    return view;
-                }
-            });
-            // 마커에 클릭 이벤트 설정
-            marker.setOnClickListener((overlay) -> {
-                if (isInfoWindowOpen == true) {
-                    infoWindow.close(); // 정보창을 닫습니다.
-                    isInfoWindowOpen = false; // 정보창 상태를 열림에서 닫힘으로 변경합니다.
-                } else {
-                    infoWindow.open(marker); // 정보창을 엽니다.
-                    isInfoWindowOpen = true; // 정보창 상태를 닫힘에서 열림으로 변경합니다.
-                }
-                return true; // 클릭 이벤트를 소비했음을 반환
-            });
+                        });*/
+                        return view;
+                    }
+                });
+                // 마커에 클릭 이벤트 설정
+                marker.setOnClickListener((overlay) -> {
+                    if (isInfoWindowOpen == true) {
+                        infoWindow.close(); // 정보창을 닫습니다.
+                        isInfoWindowOpen = false; // 정보창 상태를 열림에서 닫힘으로 변경합니다.
+                    } else {
+                        infoWindow.open(marker); // 정보창을 엽니다.
+                        isInfoWindowOpen = true; // 정보창 상태를 닫힘에서 열림으로 변경합니다.
+                    }
+                    return true; // 클릭 이벤트를 소비했음을 반환
+                });
+            }
+        }catch(Exception e){
+            Log.d(TAG, "showMarkers : 마커 메서드 에러", e);
         }
     }
 
@@ -353,6 +375,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
                 mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
                 mCircleOverlay.setMap(mNaverMap);
+
+                // 현재 위치의 주소를 가져와서 검색 API에 사용
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> addresses;
+                try {
+                    addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                    if (addresses != null && !addresses.isEmpty()) {
+                        String address = addresses.get(0).getAddressLine(0);
+                        String roadAddress = addresses.get(0).getThoroughfare();
+                        Log.d(TAG, "현재 위치의 주소: " + address);
+                        String[] addressParts = address.split("\\s+", 4);
+                        String modifiedAddress = addressParts[0] + " " + addressParts[1] + " " + addressParts[2]; // 첫 번째, 두 번째, 세 번째 부분 선택
+
+
+                        // API 호출을 위한 NaverMarkerCreateTask 실행
+                        new NaverMarkerCreateTask(this, currentLocation).execute();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
             }
 

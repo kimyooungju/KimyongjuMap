@@ -1,89 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/info_window_background"
+    android:padding="12dp"
+    android:elevation="20dp">
+<LinearLayout
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:background="@color/quantum_white_100">
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="950px"
         android:layout_height="wrap_content">
         <TextView
             android:id="@+id/foodTitle"
             android:layout_width="250px"
-            android:layout_height="40dp"
-            android:textSize="18dp"
+            android:layout_height="60dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:text="음식점 이름: " />
         <TextView
             android:id="@+id/getFoodTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:textSize="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:hint="등록되지 않은 음식점입니다" />
     </LinearLayout>
-
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
+        android:layout_height="2px"
+        android:background="#808080" />
+    <LinearLayout
+        android:layout_width="950px"
         android:layout_height="wrap_content">
         <TextView
             android:id="@+id/foodAddress"
             android:layout_width="250px"
-            android:layout_height="40dp"
-            android:textSize="18dp"
+            android:layout_height="60dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:text="주소: " />
         <TextView
             android:id="@+id/getFoodAddress"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:textSize="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:hint="등록되지 않은 음식점입니다" />
     </LinearLayout>
-
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="2px"
+        android:background="#808080" />
+    <LinearLayout
+        android:layout_width="950px"
+        android:layout_height="wrap_content"
+        android:elevation="12dp">
         <TextView
             android:id="@+id/foodCategory"
             android:layout_width="250px"
             android:layout_height="40dp"
-            android:textSize="18dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:text="카테고리: " />
         <TextView
             android:id="@+id/getFoodCategory"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:textSize="16dp"
+            android:textSize="14dp"
             android:gravity="center"
             android:hint="등록되지 않은 음식점입니다" />
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <Button
-            android:id="@+id/linkSelect"
-            android:layout_width="350px"
-            android:layout_height="45dp"
-            android:gravity="left"
-            android:radius="5px"
-            android:textSize="12dp"
-            android:width="8dp"
-            android:color="@color/quantum_orange"
-            android:background="@color/quantum_yellow"
-            android:text="식당 페이지 이동" />
-
-        <TextView
-            android:id="@+id/getFoodLink"
-            android:layout_width="wrap_content"
-            android:layout_height="45dp"
-            android:textSize="16dp"
-            android:gravity="center"
-            android:hint="등록되지 않은 음식점입니다" />
-
-    </LinearLayout>
-
 </LinearLayout>
+</FrameLayout>

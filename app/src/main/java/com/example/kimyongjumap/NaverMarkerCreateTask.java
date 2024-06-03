@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.overlay.CircleOverlay;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,46 +35,47 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
         Log.d(TAG, "doInBackground");
         List<MarkerInfo> markerInfoList = new ArrayList<>();
         try {
-            String query = URLEncoder.encode("맘스터치", "UTF-8");
-            String apiUrl = "https://openapi.naver.com/v1/search/local.json?query="+query+"&display=100"; //한번의 검색으로 1000개를 가져옴
+                String query = URLEncoder.encode("기찬닭발", "UTF-8");
+                String apiUrl = "https://openapi.naver.com/v1/search/local.json?query="+query+"&display=5"; //한번의 검색으로 1000개를 가져옴
 
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("X-Naver-Client-Id", NAVER_CLIENT_ID);
-            connection.setRequestProperty("X-Naver-Client-Secret", NAVER_CLIENT_SECRET);
-            connection.setConnectTimeout(10000);
+                URL url = new URL(apiUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("X-Naver-Client-Id", NAVER_CLIENT_ID);
+                connection.setRequestProperty("X-Naver-Client-Secret", NAVER_CLIENT_SECRET);
+                connection.setConnectTimeout(10000);
 
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-
-                JSONObject jsonObject = new JSONObject(response.toString());
-                JSONArray items = jsonObject.getJSONArray("items");
-
-                for (int i = 0; i < items.length(); i++) {
-                    JSONObject item = items.getJSONObject(i);
-                    String title = item.getString("title");
-                    String link = item.getString("link");
-                    String address = item.getString("address");
-                    String category = item.getString("category");
-                    String JSONlatitude = item.getString("mapy");
-                    String JSONlongitude = item.getString("mapx");
-                    double longitude = Double.parseDouble(JSONlongitude.substring(0, 3) + "." + JSONlongitude.substring(3));
-                    double latitude = Double.parseDouble(JSONlatitude.substring(0, 2) + "." + JSONlatitude.substring(2));
-                    System.out.println("위도" +latitude+ "경도"+longitude );
-                    LatLng latLng = new LatLng(latitude, longitude);
-
-                    if (isWithin1Km(currentLocation.latitude, currentLocation.longitude, latitude, longitude)) {
-                        markerInfoList.add(new MarkerInfo(title, link, address, category, latLng));
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
                     }
-                }
+                    reader.close();
+
+                    JSONObject jsonObject = new JSONObject(response.toString());
+                    JSONArray items = jsonObject.getJSONArray("items");
+
+                    for (int i = 0; i < items.length(); i++) {
+                        JSONObject item = items.getJSONObject(i);
+                        String title = item.getString("title");
+                        String link = item.getString("link");
+                        String address = item.getString("address");
+                        String category = item.getString("category");
+                        String JSONlatitude = item.getString("mapy");
+                        String JSONlongitude = item.getString("mapx");
+                        double longitude = Double.parseDouble(JSONlongitude.substring(0, 3) + "." + JSONlongitude.substring(3));
+                        double latitude = Double.parseDouble(JSONlatitude.substring(0, 2) + "." + JSONlatitude.substring(2));
+                        System.out.println("위도" + latitude + "경도" + longitude);
+                        LatLng latLng = new LatLng(latitude, longitude);
+                        if(!markerInfoList.contains(address)) {
+                            if (calculateDistance(currentLocation, latLng) <= 1) {
+                                markerInfoList.add(new MarkerInfo(title, link, address, category, latLng));
+                            }
+                        }
+                    }
             }
         } catch (Exception e) {
             Log.e("NaverMarkerCreateTask", "백그라운드 에러발생", e);
@@ -83,21 +85,24 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
 
     @Override
     protected void onPostExecute(List<MarkerInfo> markerInfoList) {
-        if (context instanceof MainActivity) {
-            ((MainActivity) context).showMarkers(markerInfoList);
+        try {
+            if (context instanceof MainActivity) {
+                ((MainActivity) context).showMarkers(markerInfoList);
+            }
+        }catch(Exception e){
+            Log.e(" onPostExecute", "매인 스레드 에러발생", e);
         }
     }
-    private boolean isWithin1Km(double lat1, double lon1, double lat2, double lon2) {
-        // 위도 1km에 해당하는 변화량
-        double latDelta = 0.0091;
-        // 경도 1km에 해당하는 변화량
-        double lonDelta = 0.0113;
 
-        // 두 지점 간의 직선 거리 계산
-        double latDistance = Math.abs(lat2 - lat1);
-        double lonDistance = Math.abs(lon2 - lon1);
-
-        // 1km 이내에 있는지 확인
-        return latDistance <= latDelta && lonDistance <= lonDelta;
+    public static double calculateDistance(LatLng point1, LatLng point2) {
+        double earthRadius = 6371.0; // km
+        double dLat = Math.toRadians(point2.latitude - point1.latitude);
+        double dLng = Math.toRadians(point2.longitude - point1.longitude);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(point1.latitude)) * Math.cos(Math.toRadians(point2.latitude))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        System.out.println("거리계산 결과: " +earthRadius * c);
+        return earthRadius * c;
     }
 }
