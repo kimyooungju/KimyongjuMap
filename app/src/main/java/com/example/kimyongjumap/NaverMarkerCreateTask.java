@@ -24,6 +24,7 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
     private static final String NAVER_CLIENT_SECRET = "cMqZPul6Mj";
     private Context context;
     private LatLng currentLocation;
+    double markerDistance = 0;
 
     public NaverMarkerCreateTask(Context context, LatLng currentLocation) {
         this.context = context;
@@ -70,9 +71,10 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
                         double latitude = Double.parseDouble(JSONlatitude.substring(0, 2) + "." + JSONlatitude.substring(2));
                         System.out.println("위도" + latitude + "경도" + longitude);
                         LatLng latLng = new LatLng(latitude, longitude);
+                        String complatedDistance = placeDistance(calculateDistance(currentLocation, latLng));
                         if(!markerInfoList.contains(address)) {
                             if (calculateDistance(currentLocation, latLng) <= 1) {
-                                markerInfoList.add(new MarkerInfo(title, link, address, category, latLng));
+                                markerInfoList.add(new MarkerInfo(title, link, address, category, latLng, complatedDistance));
                             }
                         }
                     }
@@ -103,6 +105,33 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
                 * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         System.out.println("거리계산 결과: " +earthRadius * c);
-        return earthRadius * c;
+        return  earthRadius * c;
+    }
+
+    public String placeDistance(double distance){
+        String roundedDistance = String.format("%.3f", distance);
+        double complateDistance = 0;
+
+        if (roundedDistance.startsWith("0.")) {
+            complateDistance = Integer.parseInt(roundedDistance.substring(2));
+        } else if(roundedDistance.startsWith("0.0")){
+            complateDistance = Integer.parseInt(roundedDistance.substring(3));
+        } else if(roundedDistance.startsWith("0.00")){
+            complateDistance = Integer.parseInt(roundedDistance.substring(4));
+        } else {
+            complateDistance = Integer.parseInt(roundedDistance.replace(".0", ""));
+        }
+        String.format("%.0f", complateDistance);
+        System.out.println("complateDistance 결과: " +complateDistance);
+        if (complateDistance >= 1000) {
+            complateDistance = distance / 1000; // m를 km로 변환
+            String longDistance = String.format("%.1fkm", complateDistance); // 소수점 이하 한 자리까지 표시
+            System.out.println("longDistance 결과: " +complateDistance);
+            return longDistance;
+        }else{
+            String shortDistance = complateDistance + "m";
+            System.out.println("shortDistance 결과: " +complateDistance);
+            return shortDistance;
+        }
     }
 }

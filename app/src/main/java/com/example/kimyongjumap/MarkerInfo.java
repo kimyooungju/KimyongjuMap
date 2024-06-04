@@ -8,6 +8,16 @@ public class MarkerInfo {
     private String address;
     private LatLng latLng;
     private String category;
+    private String complatedDistance;
+
+    public MarkerInfo(String title, String link, String address, String category, LatLng latLng, String complatedDistance) {
+        this.title = title;
+        this.link = link;
+        this.address = address;
+        this.category = category;
+        this.latLng = latLng;
+        this.complatedDistance = complatedDistance;
+    }
 
     public MarkerInfo(String title, String link, String address, String category, LatLng latLng) {
         this.title = title;
@@ -55,5 +65,13 @@ public class MarkerInfo {
 
     public void setLatLng(LatLng latLng) {
         this.latLng = latLng;
+    }
+
+    public String getComplatedDistance() {
+        return complatedDistance;
+    }
+
+    public void setComplatedDistance(String complatedDistance) {
+        this.complatedDistance = complatedDistance;
     }
 }
