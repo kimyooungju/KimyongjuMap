@@ -1,13 +1,10 @@
 package com.example.kimyongjumap;
 
-import android.content.Intent;
+
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 
@@ -18,20 +15,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 
-
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.Button;
+
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.naver.maps.geometry.Coord;
+
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.LocationTrackingMode;
@@ -41,7 +34,6 @@ import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.CircleOverlay;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
-import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PathOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
@@ -60,7 +52,6 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, NaverSearchTask.SearchCallback {
     PathOverlay path = new PathOverlay();
-    List<LatLng> coords = new ArrayList<>();
     private static final String TAG = "MainActivity";
     private static OverlayImage overlayImage;
     private static final int PERMISSION_REQUEST_CODE = 100;
@@ -78,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean isInfoWindowOpen = false;
     private List<Marker> markerList = new ArrayList<>();
     private Marker currentLocationMarker; // 현재 위치 마커를 클래스 필드로 선언
-    private View.OnClickListener cl;
+    View.OnClickListener cl;
     private InfoWindow infoWindow = new InfoWindow();
     public CircleOverlay mCircleOverlay;
 
@@ -139,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // 입력 전에 수행할 작업
-
             }
 
             @Override
@@ -158,8 +148,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-
-
         FragmentManager fm = getSupportFragmentManager();  //현제 액티비티의 fragmentManager을 가져옴
         MapFragment mapFragment = (MapFragment) fm.findFragmentById(R.id.map_fragment); //연결/ 변수mapFragment에 Naver에서 제공되는 지도api를 담음
         if (mapFragment == null) { //null이면 현제 액티비티에 추가되지 않은상태일때 실행
@@ -169,8 +157,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
     }
 
-    private void mylocationMap(){
-        // GPS를 사용하는 사용자의 기기가 위치변동이 있을때마다 수행함
+    private void mylocationMap(){ // 아이콘버튼을 클릭하면 수행되는 현재위치 초기화 메서드
+        // GPS를 사용하는 사용자의 기기가 위치변동이 있으면 변동된 위치를 표시
         NaverMap.OnLocationChangeListener locationChangeListener = location -> {
             LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
             mNaverMap.moveCamera(CameraUpdate.scrollTo(currentLocation));
@@ -188,21 +176,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
                 mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
                 mCircleOverlay.setMap(mNaverMap);
+
+                // API 호출을 위한 NaverMarkerCreateTask 실행
+                new NaverMarkerCreateTask(this, currentLocation).execute();
                 Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                 List<Address> addresses;
                 try {
                     addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                     if (addresses != null && !addresses.isEmpty()) {
                         String address = addresses.get(0).getAddressLine(0);
-                        String roadAddress = addresses.get(0).getThoroughfare();
                         Log.d(TAG, "현재 위치의 주소: " + address);
                         String firstDelAdd = address.replaceFirst("^.*?\\s+", "");
                         String[] addressParts = firstDelAdd.split("\\s+", 4);
                         String modifiedAddress = addressParts[0] + " " + addressParts[1] + " " + addressParts[2];
                         Log.d(TAG,"내위치 주소: "+modifiedAddress);
-
-                        // API 호출을 위한 NaverMarkerCreateTask 실행
-                        new NaverMarkerCreateTask(this, currentLocation).execute();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -226,18 +213,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void handleSearchQuery(String query) {// 자신의 위치로 이동후 마커생성
         // MainActivity 인스턴스를 NaverSearchTask 생성자에 전달하지 않고,
         // MainActivity에서 구현한 SearchCallback 인터페이스를 사용하여 콜백을 처리합니다.
-
-        if (!TextUtils.isEmpty(query)) { //query가 비어있지 않으면 실행
-            if (mNaverSearchTask != null && mNaverSearchTask.getStatus() == AsyncTask.Status.RUNNING) {  //백그라운드 작업코드부분 mNaverSearchTask가 null이 아니고 실행중일때
-                mNaverSearchTask.cancel(true);  // 작업취소
-            }
-            mNaverSearchTask = new NaverSearchTask(MainActivity.this);
-            mNaverSearchTask.execute(query);
-        }
-        String address = query;
         try{
             Geocoder geocoder = new Geocoder(MainActivity.this);
-            List<Address> addresses = geocoder.getFromLocationName(address, 1);
+            List<Address> addresses = geocoder.getFromLocationName(query, 1);
             if (!addresses.isEmpty()) {
                 Address addressResult = addresses.get(0);
                 LatLng latLng = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
@@ -324,18 +302,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 };
                 // 마커에 클릭 이벤트 설정
                 marker.setOnClickListener((overlay) -> {
-                    if (isInfoWindowOpen == true) {
-                        path.setMap(null);
-                        marker.setCaptionText(null);
-                        infoWindow.close(); // 정보창을 닫습니다.
-                        isInfoWindowOpen = false; // 정보창 상태를 열림에서 닫힘으로 변경합니다.
-                    } else {
+                    if (isInfoWindowOpen == false) { // 정보창 상태를 닫힘에서 열림으로 변경합니다.
                         mNaverMap.addOnLocationChangeListener(locationChangeListener);
                         mNaverMap.removeOnLocationChangeListener(locationChangeListener);
                         path.setMap(mNaverMap);
+                        marker.setCaptionOffset(20);
+                        marker.setCaptionColor(Color.parseColor("#FFEA6E21"));
+                        marker.setCaptionTextSize(15);
+                        marker.setSubCaptionColor(Color.parseColor("#FF3982CE"));
+                        marker.setSubCaptionTextSize(12);
+                        marker.setSubCaptionText("음식점과 거리");
                         marker.setCaptionText(markerInfo.getComplatedDistance());
                         infoWindow.open(marker); // 정보창을 엽니다.
-                        isInfoWindowOpen = true; // 정보창 상태를 닫힘에서 열림으로 변경합니다.
+                        isInfoWindowOpen = true;
+                    } else { // 정보창 상태를 열림에서 닫힘으로 변경합니다.
+                        path.setMap(null);
+                        marker.setCaptionText(null);
+                        infoWindow.close(); // 정보창을 닫습니다.
+                        isInfoWindowOpen = false;
                     }
                     return true; // 클릭 이벤트를 소비했음을 반환
                 });
@@ -369,37 +353,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         NaverMap.OnLocationChangeListener locationChangeListener = location -> {
             LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
             mNaverMap.moveCamera(CameraUpdate.scrollTo(currentLocation));
-            if (location != null) { // 내위치를 중심으로 반경 1km원 생성
-                if(mCircleOverlay != null){
-                    mCircleOverlay.setMap(null);
-                }
-                mCircleOverlay = new CircleOverlay();
-                mCircleOverlay.setCenter(currentLocation);
-                mCircleOverlay.setRadius(1000); // 반경 1km (미터 단위)
-                mCircleOverlay.setColor(Color.argb(20, 0, 0, 255)); // 투명 파란색
-                mCircleOverlay.setMap(mNaverMap);
-
-                // 현재 위치의 주소를 가져와서 검색 API에 사용
-                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-                List<Address> addresses;
-                try {
-                    addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    if (addresses != null && !addresses.isEmpty()) {
-                        String address = addresses.get(0).getAddressLine(0);
-                        String roadAddress = addresses.get(0).getThoroughfare();
-                        Log.d(TAG, "현재 위치의 주소: " + address);
-                        String[] addressParts = address.split("\\s+", 4);
-                        String modifiedAddress = addressParts[0] + " " + addressParts[1] + " " + addressParts[2]; // 첫 번째, 두 번째, 세 번째 부분 선택
-
-
-                        // API 호출을 위한 NaverMarkerCreateTask 실행
-                        new NaverMarkerCreateTask(this, currentLocation).execute();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
 
             // 현재 위치에 마커 추가
             currentLocationMarker = new Marker();
@@ -414,19 +367,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.addOnLocationChangeListener(locationChangeListener);
         // 위치를 받아온 후 위치 추적 리스너를 제거합니다.
         naverMap.removeOnLocationChangeListener(locationChangeListener);
-        naverMap.addOnLocationChangeListener(location ->
-                Toast.makeText(this,
-                        location.getLatitude() + ", " + location.getLongitude(),
-                        Toast.LENGTH_SHORT).show());
 
         path.setPatternImage(overlayImage.fromResource(R.drawable.baseline_arrow_drop_up_24));
-        path.setPatternInterval(60); //화살표 사이 거리px
+        path.setPatternInterval(50); //화살표 사이 거리px
         path.setWidth(30); //경로두깨
         path.setColor(Color.WHITE); //경로색상
         path.setPassedColor(Color.GRAY); //지나간 경로 색상
         path.setOutlineColor(Color.parseColor("#FFEA6E21"));// 경로 테두리 색상
         path.setPassedOutlineColor(Color.parseColor("#FF732F05")); //경로 지나간 테두리 색상
-        // path.setHideCollidedSymbols(true); //경로에 겹치는 심볼 숨기기
-        //path.setHideCollidedMarkers(true); //경로에 겹치는 마커 숨기기
+        path.setHideCollidedMarkers(true); //경로에 겹치는 마커 숨기기
     }
 }

@@ -5,7 +5,6 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.naver.maps.geometry.LatLng;
-import com.naver.maps.map.overlay.CircleOverlay;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,7 +23,6 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
     private static final String NAVER_CLIENT_SECRET = "cMqZPul6Mj";
     private Context context;
     private LatLng currentLocation;
-    double markerDistance = 0;
 
     public NaverMarkerCreateTask(Context context, LatLng currentLocation) {
         this.context = context;
@@ -96,7 +94,7 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
         }
     }
 
-    public static double calculateDistance(LatLng point1, LatLng point2) {
+    public static double calculateDistance(LatLng point1, LatLng point2) { // 현재 내위치와 해당마커 거리 계산
         double earthRadius = 6371.0; // km
         double dLat = Math.toRadians(point2.latitude - point1.latitude);
         double dLng = Math.toRadians(point2.longitude - point1.longitude);
@@ -108,30 +106,28 @@ public class NaverMarkerCreateTask extends AsyncTask<Void, Void, List<MarkerInfo
         return  earthRadius * c;
     }
 
-    public String placeDistance(double distance){
+    public String placeDistance(double distance){ //calculateDistance을 포멧처리해서 사용자가 보기쉬운 형태로 표시
         String roundedDistance = String.format("%.3f", distance);
         double complateDistance = 0;
+        int typeConversion = 0;
 
         if (roundedDistance.startsWith("0.")) {
-            complateDistance = Integer.parseInt(roundedDistance.substring(2));
+            complateDistance  = Double.parseDouble(roundedDistance.substring(2));
         } else if(roundedDistance.startsWith("0.0")){
-            complateDistance = Integer.parseInt(roundedDistance.substring(3));
+            complateDistance  = Double.parseDouble(roundedDistance.substring(3));
         } else if(roundedDistance.startsWith("0.00")){
-            complateDistance = Integer.parseInt(roundedDistance.substring(4));
+            complateDistance  = Double.parseDouble(roundedDistance.substring(4));
         } else {
-            complateDistance = Integer.parseInt(roundedDistance.replace(".0", ""));
+            complateDistance  = Double.parseDouble(roundedDistance.replace(".", ""));
         }
-        String.format("%.0f", complateDistance);
-        System.out.println("complateDistance 결과: " +complateDistance);
         if (complateDistance >= 1000) {
-            complateDistance = distance / 1000; // m를 km로 변환
-            String longDistance = String.format("%.1fkm", complateDistance); // 소수점 이하 한 자리까지 표시
-            System.out.println("longDistance 결과: " +complateDistance);
-            return longDistance;
+            complateDistance = complateDistance / 1000; // m를 km로 변환
+            String distanceFormat = String.format("%.1f", complateDistance) + "km"; // 소수점 이하 한 자리까지 표시
+                    System.out.println("complateDistance 결과: " +complateDistance);
+            return distanceFormat;
         }else{
-            String shortDistance = complateDistance + "m";
-            System.out.println("shortDistance 결과: " +complateDistance);
-            return shortDistance;
+            String distanceFormat = String.format(String.valueOf(complateDistance)).replace(".0","") + "m";
+            return distanceFormat;
         }
     }
 }
