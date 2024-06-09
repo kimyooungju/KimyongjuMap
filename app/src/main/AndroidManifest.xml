@@ -6,8 +6,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -31,9 +29,13 @@
             </intent-filter>
 
         </activity>
-        <activity android:name=".urlPage">
-
-        </activity>
+        <activity android:name=".CategoryActivity" android:exported="true"/>
+        <activity android:name=".BookmarkActivity" android:exported="true"/>
+        <activity android:name=".MyPageActivity" android:exported="true"/>
+        <activity android:name=".LoginActivity" android:exported="true"/>
+        <activity android:name=".RestaurantReviewsActivity" android:exported="true"/>
+        <activity android:name=".WriteReviewActivity" android:exported="true"/>
+        <activity android:name=".MyReviewsActivity" android:exported="true"/>
         <meta-data
             android:name="com.naver.maps.map.CLIENT_ID"
             android:value="l0dlx2ru50" />

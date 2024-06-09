@@ -1,62 +1,75 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
-    <fragment
-        android:id="@+id/map_fragment"
-        android:name="com.naver.maps.map.MapFragment"
+    <com.sothree.slidinguppanel.SlidingUpPanelLayout
+        android:id="@+id/sliding_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="192dp"
-        tools:layout_editor_absoluteY="16dp" />
+        android:layout_below="@id/toolbar"
+        android:gravity="bottom">
 
-    <android.widget.SearchView
-        android:id="@+id/searchView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:clickable="true"
-        android:focusable="false"
-        android:queryHint=""
-        android:src="@drawable/baseline_search_black_48dp"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/map_fragment"
-        app:layout_constraintVertical_bias="0.0"
-        app:queryBackground="@android:color/white">
+        <!-- 첫 번째 자식 뷰: 지도 -->
+        <FrameLayout
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="300dp" >
 
-    </android.widget.SearchView>
+        </FrameLayout>
 
-    <AutoCompleteTextView
-        android:dropDownWidth="match_parent"
-        android:id="@+id/searchAutoComplete"
-        android:layout_width="300dp"
-        android:layout_height="48dp"
-        android:background="@android:color/transparent"
-        android:completionThreshold="1"
-        android:hint="주소를 입력해주세요"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.612"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        <!-- 두 번째 자식 뷰: 검색 결과 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/white"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    </AutoCompleteTextView>
+            <EditText
+                android:id="@+id/editTextQuery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="음식점을 입력하세요" />
+
+            <Button
+                android:id="@+id/buttonSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:text="검색" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+    </com.sothree.slidinguppanel.SlidingUpPanelLayout>
 
     <ImageButton
         android:id="@+id/mygpslocation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_below="@+id/toolbar"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="350dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="31dp"
+        android:layout_marginBottom="621dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.955"
@@ -64,7 +77,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.091"
         app:srcCompat="@android:drawable/stat_notify_sync"
-        app:tint="@color/quantum_cyan" />/>
+        app:tint="@color/strongGreen" />
 
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

@@ -2,7 +2,7 @@ package com.example.kimyongjumap;
 
 import com.naver.maps.geometry.LatLng;
 
-public class MarkerInfo {
+public class MarkerInformationInfo {
     private String title;
     private String link;
     private String address;
@@ -10,7 +10,7 @@ public class MarkerInfo {
     private String category;
     private String complatedDistance;
 
-    public MarkerInfo(String title, String link, String address, String category, LatLng latLng, String complatedDistance) {
+    public MarkerInformationInfo(String title, String link, String address, String category, LatLng latLng, String complatedDistance) {
         this.title = title;
         this.link = link;
         this.address = address;
@@ -18,13 +18,11 @@ public class MarkerInfo {
         this.latLng = latLng;
         this.complatedDistance = complatedDistance;
     }
-
-    public MarkerInfo(String title, String link, String address, String category, LatLng latLng) {
+    public MarkerInformationInfo(String title, String address, LatLng latLng, String complatedDistance) {
         this.title = title;
-        this.link = link;
         this.address = address;
-        this.category = category;
         this.latLng = latLng;
+        this.complatedDistance = complatedDistance;
     }
 
     public String getTitle() {
