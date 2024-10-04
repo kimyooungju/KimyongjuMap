@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<Marker> transitMarkers = new ArrayList<>(); // 교통수단 변경 마커 리스트
     private PathOverlay pathOverlay;
     private CircleOverlay circleOverlay;
+    boolean distancePlaceState = false; //새로고침 클릭시 상태 변화
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -183,6 +186,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             return false;
         });
+
+        Button refreshButton = (Button)findViewById(R.id.buttonRefresh);
+        refreshButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int id;
+                id = v.getId();
+                if( id == R.id.buttonRefresh){
+                    mNaverMap.setLocationSource(mLocationSource);
+                    mNaverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
+                    if(bookmarkMarkerList != null) {
+                        clearSearchMarkers();
+                        circleOverlay.setRadius(0);
+                    }
+                    getUserLocationBasedMarker();
+                    showCurrentLocationCircle();
+                }
+            }
+        });
     }
 
     @Override
@@ -208,13 +230,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .addOnSuccessListener(location -> {
                         if (location != null) {
                             mCurrentLocation = location;
-                            showCurrentLocationCircle();
+                            //현재 위치의 사용자 주소를 이용해서 주변 1km 내에 랜덤 식당정보를 생성
+                            if(distancePlaceState == false){
+                                getUserLocationBasedMarker();
+                                showCurrentLocationCircle();
+                                distancePlaceState = true;
+                            }
                         }
                     });
         }
 
         // Firebase에서 데이터를 불러와 북마크된 마커 추가
         addBookmarkMarkers();
+
     }
 
     private void clearSearchMarkers() {
@@ -228,6 +256,69 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             marker.setMap(null);
         }
         transitMarkers.clear();
+    }
+
+    private void SearchUserPlaceRestaurant(String query){ // 앱 처음 실행시, 새로고침 수행시 자동실행
+        Log.d("userPlaceRestaurantSearch 전달받은 쿼리", query);
+        Call<SearchResponse> call = mNaverApiService.searchRestaurants(query, 10, 1, "random", SEARCH_CLIENT_ID, SEARCH_CLIENT_SECRET);
+        call.enqueue(new Callback<SearchResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<SearchResponse> call, @NonNull Response<SearchResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d("API Response", response.body().toString());
+                    List<Restaurant> restaurants = response.body().getItems();
+
+                    for (Restaurant restaurant : restaurants) {
+                        String name = restaurant.getTitle();
+                        if (name != null) {
+                            name = name.replaceAll("<b>", "").replaceAll("</b>", "");
+                            restaurant.setTitle(name);
+                        } else {
+                            restaurant.setTitle("Unknown Restaurant");
+                        }
+
+                        // TM128 좌표를 사용하여 위도와 경도로 변환하지 않고 그대로 저장
+                        restaurant.setMapx(restaurant.getMapx());
+                        restaurant.setMapy(restaurant.getMapy());
+
+                        LatLng userLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+                        double latitude = restaurant.getLatitude() / 10.0;
+                        double longitude = restaurant.getLongitude() / 10.0;
+                        LatLng restaurantLatLng = new LatLng(latitude, longitude);;
+                        Log.d("사용자, 식당 위도 경도", "사용자" + mCurrentLocation.getLatitude() +"/"+  mCurrentLocation.getLongitude() + "식당" + restaurant.getMapy()+"/" + restaurant.getMapx());
+
+                        if(calculateDistance(userLatLng, restaurantLatLng) <= 1) { //1km 내에서만 db 저장 후 마커생성
+                            // Firebase에 데이터 저장
+                            String key = mDatabase.push().getKey();
+                            if (key != null) {
+                                restaurant.setId(key); // ID 설정
+                                mDatabase.child(key).setValue(restaurant).addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        Log.d("Firebase", "Restaurant saved: " + restaurant.getTitle());
+                                    } else {
+                                        Log.e("Firebase", "Failed to save restaurant", task.getException());
+                                    }
+                                });
+                            }
+
+                            // 지도에 마커 추가
+                            addMarkerForRestaurant(restaurant, false); // 검색된 마커는 북마크 아님
+                            Log.d("지도에 추가된 타이틀, 주소", restaurant.getTitle() + " " + restaurant.getAddress());
+                        }
+                    }
+
+                } else {
+                    Log.e("API Error", response.errorBody().toString());
+                    Toast.makeText(MainActivity.this, "검색에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<SearchResponse> call, @NonNull Throwable t) {
+                Log.e("API Error", "Error fetching data", t);
+                Toast.makeText(MainActivity.this, "검색중 에러가 발생했습니다.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void searchRestaurants(String query) {
@@ -307,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String[] filteredParts = addressWithoutFirst.split(" ");
             String filterAddress = "";
             Log.d("selectedRestaurantCategory", selectedRestaurantCategory + "필터된값:" + Arrays.toString(filteredParts));
-            if(selectedDistancesCategory.equals("[특별시, 도]")){
+            if(selectedDistancesCategory.equals("특별시/도")){
                 if (filteredParts.length >= 1 && (filteredParts[0].endsWith("도") ||
                         filteredParts[0].endsWith("특별시"))) {
                     filterAddress = filteredParts[0];
@@ -315,9 +406,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }else{
                     Log.d("Filter1 Error","Invalid address:" + Arrays.toString(filteredParts));
                 }
-            }else if(selectedDistancesCategory.equals("[시, 구, 군]")){
-                if (filteredParts.length >= 3 && filteredParts[1].endsWith("시") &&
-                        filteredParts.length >= 3 && filteredParts[2].endsWith("구")) {
+            }else if(selectedDistancesCategory.equals("시/구/군")){
+                if (filteredParts.length >= 2 && filteredParts[1].endsWith("시") || filteredParts[2].endsWith("구")) {
                     filterAddress = filteredParts[0] + " " + filteredParts[1] + " " + filteredParts[2];
                     Log.d("Filter2", "Filtered Address (filterAddress): " + filterAddress);
                 }else if(filteredParts.length >= 2 && (filteredParts[1].endsWith("시") ||
@@ -327,11 +417,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }else{
                     Log.d("Filter2 Error","Invalid address:" + Arrays.toString(filteredParts));
                 }
-            }else if(selectedDistancesCategory.equals("[동, 읍, 면]")){
+            }else if(selectedDistancesCategory.equals("동/읍/면")){
                 if (filteredParts.length >= 3 && (filteredParts[2].endsWith("동") || filteredParts[2].endsWith("읍") || filteredParts[2].endsWith("면"))) {
                     filterAddress = filteredParts[0] + " " + filteredParts[1] + " " + filteredParts[2];
                     Log.d("Filter3", "Filtered Address (filterAddress): " + filterAddress);
-                } else if (filteredParts.length >= 4 && (filteredParts[3].endsWith("동") || filteredParts[3].endsWith("읍") || filteredParts[3].endsWith("면"))) {
+                } else if (filteredParts.length >= 3 && (filteredParts[3].endsWith("동") || filteredParts[3].endsWith("읍") || filteredParts[3].endsWith("면"))) {
                     filterAddress = filteredParts[0] + " " + filteredParts[1] + " " + filteredParts[2] + " " + filteredParts[3];
                     Log.d("Filter3", "Filtered Address (Filter 3): " + filterAddress);
                 }else{
@@ -345,7 +435,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("MarkerClean", "기존 마커가 제거되었습니다.");
             }
             searchRestaurants(categoryQuery);
-            filterRestaurantsByCategory(selectedRestaurantCategory, filterAddress);
+            //filterRestaurantsByCategory(selectedRestaurantCategory, filterAddress);
         });
         builder.setNegativeButton("취소", (dialog, which) -> dialog.dismiss());
         builder.show();
@@ -370,6 +460,95 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return "Geocoder service error";
         }
     }
+
+    public void getUserLocationBasedMarker(){ //사용자 위치 주변 식당 정보 표시
+        List<String> get200mLatLngAddressList = generateLatLngWithin1Km(mCurrentLocation); //사용자 위치 주소 기반 1km 이내 200m마다 필터된 주소 가져오기
+        List<String> restaurantList = Arrays.asList("한식","중식","일식","양식","분식","치킨","피자","국수","디저트","카페","햄버거","생선회","구이","육류","뷔페");
+        List<String> addRestaurant = new ArrayList<>();
+
+        Random choiceRestaurant = new Random();
+
+        for(String LatLngQuery : get200mLatLngAddressList) {
+            while(true){
+                String recommendationRestaurant = restaurantList.get(choiceRestaurant.nextInt(restaurantList.size()));
+                if(!addRestaurant.contains(recommendationRestaurant)) {
+                    String userPlaceQuery = recommendationRestaurant + " " + LatLngQuery;
+                    SearchUserPlaceRestaurant(userPlaceQuery); // 드롭다운 제거한 검색
+                    addRestaurant.add(recommendationRestaurant);
+                    Log.d("getUserLocationBasedMarker 추가 성공!", userPlaceQuery);
+                    break;
+                }else if(addRestaurant.size() == restaurantList.size()){
+                    Log.d("getUserLocationBasedMarker 카테고리 가득참", "더 이상 추가 불가");
+                }else{
+                    Log.d("getUserLocationBasedMarker 이미 사용된 카테고리: ", recommendationRestaurant);
+                    continue;
+                }
+            }
+        }
+    }
+    public static double calculateDistance(LatLng point1, LatLng point2) {// 거리 계산 함수 (하버사인 공식 사용)
+        double earthRadius = 6371.0; // 지구 반지름 (단위: km)
+        double dLat = Math.toRadians(point2.latitude - point1.latitude);
+        double dLng = Math.toRadians(point2.longitude - point1.longitude);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(point1.latitude)) * Math.cos(Math.toRadians(point2.latitude))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return earthRadius * c; // 두 점 사이의 거리 반환 (단위: km)
+    }
+
+
+    public List<String> generateLatLngWithin1Km(Location userLocation) { // 위도와 경도를 기준으로 200m 간격으로 1km 반경 내의 LatLng 좌표 생성
+        List<String> generatedAddresses = new ArrayList<>();
+        LatLng userLatLng = new LatLng(userLocation.getLatitude(), userLocation.getLongitude());
+
+        // 100m당 위도 및 경도 차이 계산 (1도 = 약 111.32km)
+        double latDiff = 200 / 111320.0; // 200m당 위도 차이
+        double lngDiff = 200 / (111320.0 * Math.cos(Math.toRadians(userLatLng.latitude))); // 200m당 경도 차이
+
+        // 동서남북 방향으로 200m 간격으로 좌표를 생성
+        for (double lat = -1; lat <= 1; lat += 0.2) {
+            for (double lng = -1; lng <= 1; lng += 0.2) {
+                double newLat = userLatLng.latitude + lat * latDiff;
+                double newLng = userLatLng.longitude + lng * lngDiff;
+
+                LatLng newPoint = new LatLng(newLat, newLng);
+                double distance = calculateDistance(userLatLng, newPoint);
+                // 1km 반경 내 좌표만 추가
+                if (distance <= 1.0) {
+                    // LatLng를 Location으로 변환
+                    Location location = new Location(""); // Provider는 ""로 설정
+                    location.setLatitude(newPoint.latitude);
+                    location.setLongitude(newPoint.longitude);
+
+                    // 주소를 얻고 지역 필터 후 리스트에 추가
+                    String address = getAddressFromLocation(location);
+                    String[] addressParts = address.split(" "); // 국가 주소 제거후 문자열 결합
+                    String addressWithoutFirst = String.join(" ", Arrays.copyOfRange(addressParts, 1, addressParts.length));
+                    String[] filteredParts = addressWithoutFirst.split(" ");
+                    String filterAddress = "";
+                    Log.d("현제주소필터", "적용된 100m 주소필터 =" + Arrays.toString(filteredParts));
+                    if (filteredParts.length >= 3 && (filteredParts[2].endsWith("동") || filteredParts[2].endsWith("읍") || filteredParts[2].endsWith("면"))) {
+                        filterAddress = filteredParts[0] + " " + filteredParts[1] + " " + filteredParts[2];
+                        if(!generatedAddresses.contains(filterAddress)) { // 중복 제거
+                            generatedAddresses.add(filterAddress);
+                            Log.d("AddressFilterList", "Filtered Address (AddressFilterList): " + filterAddress);
+                        }
+                    } else if (filteredParts.length >= 4 && (filteredParts[3].endsWith("동") || filteredParts[3].endsWith("읍") || filteredParts[3].endsWith("면"))) {
+                        filterAddress = filteredParts[0] + " " + filteredParts[1] + " " + filteredParts[2] + " " + filteredParts[3];
+                        if(!generatedAddresses.contains(filterAddress)) {
+                            generatedAddresses.add(filterAddress);
+                            Log.d("AddressFilterList", "Filtered Address (AddressFilterList): " + filterAddress);
+                        }
+                    } else {
+                        Log.d("AddressFilter Error", "Invalid address:" + Arrays.toString(filteredParts));
+                    }
+                }
+            }
+        }
+        return generatedAddresses;
+    }
+
     //private void showCategoryDialog() {
     //    AlertDialog.Builder builder = new AlertDialog.Builder(this);
     //    builder.setTitle("카테고리 선택");
@@ -410,6 +589,85 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Marker marker = new Marker();
         marker.setPosition(latLng);
+        marker.setHeight(150);
+        marker.setWidth(150);
+        // 카테고리에 따라 마커 이미지 설정
+        String category = restaurant.getCategory().replace(">"," ").replace(","," "); // 음식점의 카테고리 가져오기
+        Log.d("검색된 카테고리: ", category);
+
+        String acceptSetIcon = "default"; //아이콘 한번 저장시(true) 분할된 카테고리 반복문 탈출
+
+        if (category != null) {
+            String[] categories = category.split(" ");
+            for(String divisionCategory : categories) {
+                if (acceptSetIcon == "default" || acceptSetIcon == "기본아이콘") {
+                    switch (divisionCategory) {
+                        case "한식":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_korean_food)); // 한식 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "중식":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_chinese_food)); // 중식 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "일식":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_japanese_food)); // 일식 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "양식":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_western_food)); // 양식 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "분식":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_snack)); // 분식 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "치킨":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_chicken)); // 치킨 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "피자":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_pizza)); // 피자 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "국수":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_noodle)); // 국수 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "디저트":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_dessert)); // 디저트 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "카페":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_cafe)); // 카페 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "햄버거":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_burger)); // 버거 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "돼지고기구이":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_grill)); // 구이 마커 이미지 //'구이' 로만 있는 카테고리 분류가 없음
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "소고기구이":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_grill)); // 구이 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        case "육류":
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_meat)); // 고기 마커 이미지
+                            acceptSetIcon = "음식아이콘";
+                            break;
+                        default:
+                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_default_food)); // 고기 마커 이미지
+                            acceptSetIcon = "기본아이콘";
+                    }
+                }
+            }
+        } else {
+            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_default_food)); // 기본 마커 이미지
+        }
+
         marker.setMap(mNaverMap);
 
         if (isBookmark) {
@@ -677,11 +935,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         LatLng currentLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
 
-        /*circleOverlay = new CircleOverlay();
+        circleOverlay = new CircleOverlay();
         circleOverlay.setCenter(currentLatLng);
         circleOverlay.setRadius(1000);
         circleOverlay.setColor(Color.parseColor("#220000FF")); // 반투명한 파란색
-        circleOverlay.setMap(mNaverMap);*/
+        circleOverlay.setMap(mNaverMap);
     }
 
     @Override
