@@ -4,7 +4,11 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -587,10 +591,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         double longitude = restaurant.getLongitude() / 10.0;
         LatLng latLng = new LatLng(latitude, longitude);
 
+        // 이미지 리소스를 Bitmap으로 변환
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inMutable = true;
+
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), com.naver.maps.map.R.drawable.navermap_default_marker_icon_yellow, options);
+
+        //Canvas를 사용하여 Bitmap에 그리기
+        Canvas canvas = new Canvas(bitmap);
+
+        Drawable backgroundMarkerImage = getResources().getDrawable(R.drawable.marker_image_background);
+        backgroundMarkerImage.setBounds(10,10,100,100);
+        backgroundMarkerImage.draw(canvas);
+
         Marker marker = new Marker();
         marker.setPosition(latLng);
-        marker.setHeight(150);
-        marker.setWidth(150);
         // 카테고리에 따라 마커 이미지 설정
         String category = restaurant.getCategory().replace(">"," ").replace(","," "); // 음식점의 카테고리 가져오기
         Log.d("검색된 카테고리: ", category);
@@ -603,70 +618,104 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (acceptSetIcon == "default" || acceptSetIcon == "기본아이콘") {
                     switch (divisionCategory) {
                         case "한식":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_korean_food)); // 한식 마커 이미지
+                            Drawable koreanFoodMarker = getResources().getDrawable(R.drawable.ic_korean_food); // 한식 마커 이미지
+                            koreanFoodMarker.setBounds(20, 20, 90, 90);
+                            koreanFoodMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "중식":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_chinese_food)); // 중식 마커 이미지
+                            Drawable chineseFoodMarker = getResources().getDrawable(R.drawable.ic_chinese_food); // 중식 마커 이미지
+                            chineseFoodMarker.setBounds(20, 20, 90, 90);
+                            chineseFoodMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "일식":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_japanese_food)); // 일식 마커 이미지
+                            Drawable japaneseFoodMarker = getResources().getDrawable(R.drawable.ic_japanese_food); //일식 마커 이미지
+                            japaneseFoodMarker.setBounds(20, 20, 90, 90);
+                            japaneseFoodMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "양식":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_western_food)); // 양식 마커 이미지
+                            Drawable westernFoodMarker = getResources().getDrawable(R.drawable.ic_western_food); //양식 마커 이미지
+                            westernFoodMarker.setBounds(20, 20, 90, 90);
+                            westernFoodMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "분식":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_snack)); // 분식 마커 이미지
+                            Drawable snackMarker = getResources().getDrawable(R.drawable.ic_snack); //분식 마커 이미지
+                            snackMarker.setBounds(20, 20, 90, 90);
+                            snackMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "치킨":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_chicken)); // 치킨 마커 이미지
+                            Drawable chickenMarker = getResources().getDrawable(R.drawable.ic_chicken); //치킨 마커 이미지
+                            chickenMarker.setBounds(20, 20, 90, 90);
+                            chickenMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "피자":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_pizza)); // 피자 마커 이미지
+                            //marker.setIcon(OverlayImage.fromResource(R.drawable.ic_pizza)); // 피자 마커 이미지
+                            Drawable pizzaMarker = getResources().getDrawable(R.drawable.ic_pizza);
+                            pizzaMarker.setBounds(20, 20, 90, 90);
+                            pizzaMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "국수":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_noodle)); // 국수 마커 이미지
+                            Drawable noodleMarker = getResources().getDrawable(R.drawable.ic_noodle); //국수 마커 이미지
+                            noodleMarker.setBounds(20, 20, 90, 90);
+                            noodleMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "디저트":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_dessert)); // 디저트 마커 이미지
+                            Drawable dessertMarker = getResources().getDrawable(R.drawable.ic_dessert); // 디저트 마커 이미지
+                            dessertMarker.setBounds(20, 20, 90, 90);
+                            dessertMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "카페":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_cafe)); // 카페 마커 이미지
+                            Drawable cafeMarker = getResources().getDrawable(R.drawable.ic_cafe); // 카페 마커 이미지
+                            cafeMarker.setBounds(20, 20, 90, 90);
+                            cafeMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "햄버거":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_burger)); // 버거 마커 이미지
+                            Drawable burgerMarker = getResources().getDrawable(R.drawable.ic_burger); // 버거 마커 이미지
+                            burgerMarker.setBounds(20, 20, 90, 90);
+                            burgerMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "돼지고기구이":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_grill)); // 구이 마커 이미지 //'구이' 로만 있는 카테고리 분류가 없음
+                            Drawable pigGrillMarker = getResources().getDrawable(R.drawable.ic_grill); // 돼지고기구이 마커 이미지 //'구이' 로만 있는 카테고리 분류가 없음
+                            pigGrillMarker.setBounds(20, 20, 90, 90);
+                            pigGrillMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "소고기구이":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_grill)); // 구이 마커 이미지
+                            Drawable cowGrillMarker = getResources().getDrawable(R.drawable.ic_grill); // 소고기구이 마커 이미지
+                            cowGrillMarker.setBounds(20, 20, 90, 90);
+                            cowGrillMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         case "육류":
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_meat)); // 고기 마커 이미지
+                            Drawable meatMarker = getResources().getDrawable(R.drawable.ic_meat); // 고기 마커 이미지
+                            meatMarker.setBounds(20, 20, 90, 90);
+                            meatMarker.draw(canvas);
                             acceptSetIcon = "음식아이콘";
                             break;
                         default:
-                            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_default_food)); // 고기 마커 이미지
+                            Drawable defaultFoodMarker = getResources().getDrawable(R.drawable.ic_default_food); // 그외 음식 마커 이미지
+                            defaultFoodMarker.setBounds(20, 20, 90, 90);
+                            defaultFoodMarker.draw(canvas);
                             acceptSetIcon = "기본아이콘";
                     }
                 }
             }
         } else {
-            marker.setIcon(OverlayImage.fromResource(R.drawable.ic_default_food)); // 기본 마커 이미지
+            Drawable defaultMarker = getResources().getDrawable(R.drawable.ic_default); // 기본 마커 이미지
+            defaultMarker.setBounds(20, 20, 90, 90);
+            defaultMarker.draw(canvas);
         }
+        marker.setIcon(OverlayImage.fromBitmap(bitmap));
 
         marker.setMap(mNaverMap);
 
