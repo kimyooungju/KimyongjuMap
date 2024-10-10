@@ -4,7 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,68 +13,72 @@ import androidx.annotation.NonNull;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class RestaurantInfoDialog extends Dialog {
 
     private Restaurant restaurant;
-    private DatabaseReference mBookmarkDatabase;
+    private Context context;
 
     public RestaurantInfoDialog(@NonNull Context context, Restaurant restaurant) {
         super(context);
+        this.context = context;
         this.restaurant = restaurant;
-        mBookmarkDatabase = FirebaseDatabase.getInstance().getReference("bookmarks");
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_restaurant_info);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.restaurant_info);
 
-        TextView textViewName = findViewById(R.id.textViewName);
-        TextView textViewAddress = findViewById(R.id.textViewAddress);
+        TextView foodTitle = findViewById(R.id.getFoodTitle);
+        TextView foodAddress = findViewById(R.id.getFoodAddress);
+        TextView foodCategory = findViewById(R.id.getFoodCategory);
         Button buttonBookmark = findViewById(R.id.buttonBookmark);
         Button buttonViewReviews = findViewById(R.id.buttonViewReviews);
-        Button buttonWriteReview = findViewById(R.id.buttonWriteReview);
 
-        textViewName.setText(restaurant.getTitle());
-        textViewAddress.setText(restaurant.getAddress());
+        foodTitle.setText(restaurant.getTitle());
+        foodAddress.setText(restaurant.getAddress());
+        foodCategory.setText(restaurant.getCategory());
 
-        buttonBookmark.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                if (user != null) {
-                    // 로그인된 사용자만 북마크 저장 가능
-                    String userId = user.getUid();
-                    String key = mBookmarkDatabase.child(userId).push().getKey();
-                    if (key != null) {
-                        mBookmarkDatabase.child(userId).child(key).setValue(restaurant);
-                        dismiss();
+        buttonBookmark.setOnClickListener(v -> {
+            // 북마크 추가/삭제 기능 구현
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                DatabaseReference bookmarkRef = FirebaseDatabase.getInstance().getReference("bookmarks").child(user.getUid()).child(restaurant.getId());
+                bookmarkRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            bookmarkRef.removeValue();
+                            Toast.makeText(context, "북마크가 제거되었습니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            bookmarkRef.setValue(restaurant);
+                            Toast.makeText(context, "북마크가 추가되었습니다.", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                } else {
-                    Toast.makeText(getContext(), "로그인이 필요합니다", Toast.LENGTH_SHORT).show();
-                }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(context, "북마크의 제거/추가에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else {
+                Toast.makeText(context, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
             }
         });
 
-        buttonViewReviews.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), RestaurantReviewsActivity.class);
-                intent.putExtra("restaurantId", restaurant.getId());
-                getContext().startActivity(intent);
-            }
-        });
-
-        buttonWriteReview.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), WriteReviewActivity.class);
-                intent.putExtra("restaurantId", restaurant.getId());
-                getContext().startActivity(intent);
-            }
+        buttonViewReviews.setOnClickListener(v -> {
+            // 리뷰 보기 기능 구현
+            Intent intent = new Intent(context, RestaurantReviewsActivity.class);
+            intent.putExtra("restaurantId", restaurant.getId());
+            context.startActivity(intent);
+            dismiss();
         });
     }
 }

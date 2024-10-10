@@ -13,12 +13,12 @@
         <item>버거</item>
         <item>생선회</item>
         <item>구이</item>
-        <item>고기</item>
+        <item>육류</item>
         <item>뷔페</item>
     </string-array>
     <string-array name="search_distances">
-        <item>[특별시, 도]</item>
-        <item>[시, 구, 군]</item>
-        <item>[동, 읍, 면]</item>
+        <item>특별시/도</item>
+        <item>시/구/군</item>
+        <item>동/읍/면</item>
     </string-array>
 </resources>

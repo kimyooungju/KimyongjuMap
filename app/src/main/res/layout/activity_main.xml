@@ -5,78 +5,96 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <include
-        android:id="@+id/toolbar"
-        layout="@layout/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
+    <!-- SlidingUpPanelLayout: 검색 결과를 포함하는 레이아웃 -->
     <com.sothree.slidinguppanel.SlidingUpPanelLayout
         android:id="@+id/sliding_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/toolbar"
-        android:gravity="bottom">
+        android:gravity="bottom"
+        app:umanoInitialState="collapsed"
+        app:umanoPanelHeight="0dp"
+        android:background="@android:color/transparent"
+        app:umanoShadowHeight="25dp">
 
-        <!-- 첫 번째 자식 뷰: 지도 -->
+        <!-- FrameLayout: 지도 -->
         <FrameLayout
-            android:id="@+id/map"
-            android:layout_width="match_parent"
-            android:layout_height="300dp" >
-
-        </FrameLayout>
-
-        <!-- 두 번째 자식 뷰: 검색 결과 -->
-        <LinearLayout
+            android:id="@+id/mapContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/white"
+            android:background="@android:color/transparent">
+        </FrameLayout>
+
+        <!-- 검색 결과 패널을 담을 LinearLayout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="600dp"
+            android:alpha="0.8"
+            android:background="@android:color/transparent"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <EditText
-                android:id="@+id/editTextQuery"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="음식점을 입력하세요" />
-
-            <Button
-                android:id="@+id/buttonSearch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:text="검색" />
-
+            <!-- RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="0dp"
+                android:background="@android:color/transparent"
+                android:layout_weight="1" />
         </LinearLayout>
-
     </com.sothree.slidinguppanel.SlidingUpPanelLayout>
 
-    <ImageButton
-        android:id="@+id/mygpslocation"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_below="@+id/toolbar"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
+    <!-- 검색 바와 버튼 -->
+    <LinearLayout
+        android:id="@+id/searchLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#22000000"
+        android:padding="16dp"
+        android:layout_alignParentTop="true">
+
+        <EditText
+            android:id="@+id/editTextQuery"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="음식점을 입력해주세요"
+            android:padding="10dp"
+            android:background="@android:color/white" />
+
+        <Button
+            android:id="@+id/buttonSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="검색"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/buttonRefresh"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="100dp"
+            android:layout_marginLeft="16dp"
+            android:background="@drawable/button_background"
+            android:drawableTop="@drawable/icon_color_selector" />
+    </LinearLayout>
+
+    <!-- 바텀 네비게이션 뷰 -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="350dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="31dp"
-        android:layout_marginBottom="621dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.955"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.091"
-        app:srcCompat="@android:drawable/stat_notify_sync"
-        app:tint="@color/strongGreen" />
+        app:menu="@menu/bottom_navigation_menu"
+        app:itemIconTint="@null"
+        app:itemTextColor="@color/nav_item_color"
+        app:itemBackground="@drawable/nav_item_background" />
 
 </RelativeLayout>

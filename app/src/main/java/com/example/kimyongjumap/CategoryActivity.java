@@ -1,54 +1,39 @@
 package com.example.kimyongjumap;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.Spinner;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class CategoryActivity extends AppCompatActivity {
-
-    private LinearLayout categoryLayout;
-    private EditText editTextCategory;
+    private Spinner categorySpinner;
+    private Spinner distanceSpinner;
+    private Button searchButton;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_category);
 
-        categoryLayout = findViewById(R.id.categoryLayout);
-        editTextCategory = findViewById(R.id.editTextCategory);
-        Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
+        categorySpinner = findViewById(R.id.categorySpinner);
+        distanceSpinner = findViewById(R.id.distanceSpinner);
+        searchButton = findViewById(R.id.searchButton);
 
-        buttonAddCategory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addCategory();
-            }
+        searchButton.setOnClickListener(v -> {
+            String category = categorySpinner.getSelectedItem().toString();
+            String distance = distanceSpinner.getSelectedItem().toString();
+
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra("category", category);
+            resultIntent.putExtra("distance", distance);
+            setResult(RESULT_OK, resultIntent);
+            finish();
         });
-    }
 
-    private void addCategory() {
-        String category = editTextCategory.getText().toString().trim();
-        if (!category.isEmpty()) {
-            // 카테고리를 추가하고 화면에 표시
-            Button button = new Button(this);
-            button.setText(category);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // 카테고리별 검색 로직 구현
-                    searchCategory(category);
-                }
-            });
-            categoryLayout.addView(button);
-        }
-    }
-
-    private void searchCategory(String category) {
-        // 카테고리별 검색 로직 구현
+        // 메인 페이지로 돌아가기 버튼 추가
+        Button backButton = findViewById(R.id.back_button);
+        backButton.setOnClickListener(v -> finish());
     }
 }

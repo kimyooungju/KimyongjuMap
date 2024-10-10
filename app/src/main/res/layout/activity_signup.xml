@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    tools:context=".SignupActivity">
 
     <EditText
         android:id="@+id/editTextEmail"
@@ -18,11 +20,12 @@
         android:hint="비밀번호"
         android:inputType="textPassword" />
 
-    <Button
-        android:id="@+id/buttonLogin"
+    <EditText
+        android:id="@+id/editTextConfirmPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="로그인" />
+        android:hint="비밀번호 확인"
+        android:inputType="textPassword" />
 
     <Button
         android:id="@+id/buttonSignup"
@@ -30,9 +33,4 @@
         android:layout_height="wrap_content"
         android:text="회원가입" />
 
-    <Button
-        android:id="@+id/buttonBackToMain"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="메인페이지로 돌아가기" />
 </LinearLayout>

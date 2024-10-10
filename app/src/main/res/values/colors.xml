@@ -2,6 +2,5 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="strongGreen">#FF70A434</color>
-    <color name="quantum_white_100">#ffffff</color>
+    <color name="nav_item_color">#FF000000</color>
 </resources>
